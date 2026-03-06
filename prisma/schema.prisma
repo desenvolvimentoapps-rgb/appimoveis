@@ -1,0 +1,227 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// =======================
+// NEXT AUTH
+// =======================
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// =======================
+// FASE 2: USUÁRIOS
+// =======================
+model User {
+  id             String    @id @default(cuid())
+  name           String?
+  email          String?   @unique
+  emailVerified  DateTime?
+  image          String?
+  passwordHash   String?
+
+  level          String    @default("OPERACIONAL") // MASTER, GESTOR, OPERACIONAL
+  status         String    @default("ATIVO")       // ATIVO, BLOQUEADO
+  forceReset     Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  accounts       Account[]
+  sessions       Session[]
+  dashboards     Dashboard[] @relation("DashboardCreator")
+  allowedCharts  ChartAccess[]
+}
+
+// =======================
+// FASE 3/4: CONSTRUTOR DINÂMICO E IMÓVEIS
+// =======================
+
+model LocationState {
+  id        String   @id @default(cuid())
+  uf        String   @unique
+  name      String
+  cities    LocationCity[]
+  createdAt DateTime @default(now())
+}
+
+model LocationCity {
+  id        String        @id @default(cuid())
+  name      String
+  stateId   String
+  state     LocationState @relation(fields: [stateId], references: [id], onDelete: Cascade)
+  properties Property[]
+  createdAt DateTime      @default(now())
+}
+
+model Amenity {
+  id            String             @id @default(cuid())
+  name          String             @unique
+  icon          String?
+  properties    PropertyAmenity[]
+  createdAt     DateTime           @default(now())
+}
+
+model PropertyType {
+  id           String         @id @default(cuid())
+  name         String         @unique // Casa, Apartamento, etc.
+  properties   Property[]
+  customFields CustomField[]
+  createdAt    DateTime       @default(now())
+}
+
+model CustomField {
+  id              String        @id @default(cuid())
+  name            String        // Ex: "Área do Terreno"
+  type            String        // text, number, boolean, textarea
+  isRequired      Boolean       @default(false)
+  showInSearch    Boolean       @default(false)
+  showInList      Boolean       @default(false)
+  showInDetail    Boolean       @default(true)
+  icon            String?
+  iconColor       String?
+  propertyTypeId  String
+  propertyType    PropertyType  @relation(fields: [propertyTypeId], references: [id], onDelete: Cascade)
+  values          PropertyValue[]
+}
+
+model Property {
+  id               String            @id @default(cuid())
+  code             String            @unique
+  title            String
+  status           String            @default("DISPONIVEL") // DISPONIVEL, VENDIDO, ALUGADO, RESERVADO
+  address          String?
+  zipCode          String?
+  price            Float
+  description      String?
+  deliveryDate     DateTime?
+  showDeliveryDate Boolean           @default(true)
+  whatsappBR       Boolean           @default(true)
+  whatsappExt      Boolean           @default(false)
+  region           String            @default("BRASIL") // BRASIL, EXTERIOR
+  
+  bedrooms         Int               @default(0)
+  bathrooms        Int               @default(0)
+  parkingSpaces    Int               @default(0)
+  totalArea        Float             @default(0)
+  usefulArea       Float             @default(0)
+  floor            Int?              // Opcional, alguns imóveis não tem andar
+  
+  views            Int               @default(0)
+  clicks           Int               @default(0)
+  
+  typeId           String
+  type             PropertyType      @relation(fields: [typeId], references: [id])
+  
+  cityId           String?
+  city             LocationCity?     @relation(fields: [cityId], references: [id])
+
+  images           PropertyImage[]
+  amenities        PropertyAmenity[]
+  customValues     PropertyValue[]
+  
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model PropertyAmenity {
+  propertyId String
+  amenityId  String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  amenity    Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  @@id([propertyId, amenityId])
+}
+
+model PropertyValue {
+  propertyId    String
+  customFieldId String
+  value         String     
+  
+  property      Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  customField   CustomField @relation(fields: [customFieldId], references: [id], onDelete: Cascade)
+
+  @@id([propertyId, customFieldId])
+}
+
+model PropertyImage {
+  id         String   @id @default(cuid())
+  url        String
+  order      Int      @default(0)
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+}
+
+// =======================
+// FASE 6: DASHBOARD E ANALYTICS
+// =======================
+
+model Dashboard {
+  id             String   @id @default(cuid())
+  name           String
+  charts         Chart[]
+  
+  creatorId      String
+  creator        User     @relation("DashboardCreator", fields: [creatorId], references: [id])
+  
+  createdAt      DateTime @default(now())
+}
+
+model Chart {
+  id             String   @id @default(cuid())
+  title          String
+  type           String   // PIE, BAR, LINE, NUMBER
+  dataSource     String   // property_type, region, status, custom_field
+  customFieldId  String?  // Se dataSource for custom_field
+  
+  dashboardId    String
+  dashboard      Dashboard @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+  
+  allowedUsers   ChartAccess[]
+  createdAt      DateTime @default(now())
+}
+
+model ChartAccess {
+  chartId String
+  userId  String
+  chart   Chart @relation(fields: [chartId], references: [id], onDelete: Cascade)
+  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([chartId, userId])
+}
