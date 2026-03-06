@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 export async function GET() {
     try {
@@ -41,9 +41,10 @@ export async function DELETE(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "ID é obrigatório" }, { status: 400 });
 
     try {
-        await prisma.amenity.delete({ where: { id } });
+        await prisma.amenity.delete({ where: { id: id as string } });
         return NextResponse.json({ success: true });
     } catch (error) {
         return NextResponse.json({ error: "Erro ao excluir comodidade" }, { status: 500 });

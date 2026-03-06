@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 export async function GET() {
     const session = await getServerSession(authOptions);
@@ -11,7 +11,6 @@ export async function GET() {
     const userLevel = (session.user as any).level;
 
     try {
-        // Se for Master, vê tudo. Se não, vê apenas os que tem acesso.
         const charts = await prisma.chart.findMany({
             where: userLevel === "MASTER" ? {} : {
                 allowedUsers: {
@@ -26,7 +25,6 @@ export async function GET() {
             orderBy: { createdAt: 'desc' }
         });
 
-        // Lógica para buscar os dados de cada gráfico
         const chartsWithData = await Promise.all(charts.map(async (chart) => {
             let data: any[] = [];
 
@@ -77,7 +75,6 @@ export async function POST(req: Request) {
     const { title, type, dataSource, allowedUserIds, dashboardId } = await req.json();
 
     try {
-        // Criar o gráfico e associar aos usuários permitidos
         const chart = await prisma.chart.create({
             data: {
                 title,
@@ -107,9 +104,10 @@ export async function DELETE(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "ID é obrigatório" }, { status: 400 });
 
     try {
-        await prisma.chart.delete({ where: { id } });
+        await prisma.chart.delete({ where: { id: id as string } });
         return NextResponse.json({ success: true });
     } catch (error) {
         return NextResponse.json({ error: "Erro ao excluir gráfico" }, { status: 500 });

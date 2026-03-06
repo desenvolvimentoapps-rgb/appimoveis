@@ -28,7 +28,7 @@ export async function GET() {
             by: ["cityId"],
             _count: { id: true },
         });
-        const cidades = await prisma.city.findMany();
+        const cidades = await prisma.locationCity.findMany();
         const chartCidades = porCidade.map(item => ({
             label: cidades.find(c => c.id === item.cityId)?.name || "Outros",
             count: item._count.id

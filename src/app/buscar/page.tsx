@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 
-export default function BuscarPage() {
+function BuscarResults() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const [imoveis, setImoveis] = useState<any[]>([]);
@@ -286,5 +286,18 @@ export default function BuscarPage() {
                 </div>
             </div>
         </main>
+    );
+}
+
+export default function BuscarPage() {
+    return (
+        <Suspense fallback={
+            <div style={{ padding: "8rem", textAlign: "center" }}>
+                <div style={{ fontSize: "2rem", animation: "bounce 1s infinite" }}>⏳</div>
+                <p style={{ marginTop: "1rem", fontWeight: 600, color: "var(--text-muted)" }}>Carregando buscador premium...</p>
+            </div>
+        }>
+            <BuscarResults />
+        </Suspense>
     );
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 export async function GET() {
     try {
@@ -48,7 +48,7 @@ export async function PUT(req: Request) {
 
     try {
         const tipo = await prisma.propertyType.update({
-            where: { id },
+            where: { id: id as string },
             data: { name }
         });
         return NextResponse.json(tipo);
@@ -68,7 +68,7 @@ export async function DELETE(req: Request) {
     if (!id) return NextResponse.json({ error: "ID é obrigatório" }, { status: 400 });
 
     try {
-        await prisma.propertyType.delete({ where: { id } });
+        await prisma.propertyType.delete({ where: { id: id as string } });
         return NextResponse.json({ success: true });
     } catch (error) {
         return NextResponse.json({ error: "Erro ao excluir tipo. Pode haver imóveis vinculados." }, { status: 500 });

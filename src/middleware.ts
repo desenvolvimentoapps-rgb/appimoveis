@@ -6,9 +6,8 @@ export default withAuth(
         const token = req.nextauth.token;
         const isAuth = !!token;
         const isMaster = token?.level === "MASTER";
-        const path = req.nextImplementationPlan; // Note: In next 13+ middleware req.nextUrl.pathname
-
         const pathname = req.nextUrl.pathname;
+
 
         // Se acessar /admin e não for MASTER, redireciona para /gerenciadeimovel
         if (pathname.startsWith("/admin") && !isMaster) {

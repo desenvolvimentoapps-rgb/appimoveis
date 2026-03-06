@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
@@ -164,7 +164,7 @@ export async function PUT(req: Request) {
         }
 
         const property = await prisma.property.update({
-            where: { id },
+            where: { id: id as string },
             data: {
                 ...data,
                 price: data.price ? parseFloat(data.price.toString()) : undefined,
@@ -195,7 +195,7 @@ export async function DELETE(req: Request) {
     if (!id) return NextResponse.json({ error: "ID é obrigatório" }, { status: 400 });
 
     try {
-        await prisma.property.delete({ where: { id } });
+        await prisma.property.delete({ where: { id: id as string } });
         return NextResponse.json({ success: true });
     } catch (error) {
         return NextResponse.json({ error: "Erro ao excluir imóvel" }, { status: 500 });

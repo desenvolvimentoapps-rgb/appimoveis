@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
@@ -59,13 +59,14 @@ export async function DELETE(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "ID é obrigatório" }, { status: 400 });
     const type = searchParams.get("type");
 
     try {
         if (type === "state") {
-            await prisma.locationState.delete({ where: { id } });
+            await prisma.locationState.delete({ where: { id: id as string } });
         } else {
-            await prisma.locationCity.delete({ where: { id } });
+            await prisma.locationCity.delete({ where: { id: id as string } });
         }
         return NextResponse.json({ success: true });
     } catch (error) {
