@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function ImoveisPage() {
+function AdminImoveisList() {
     const [imoveis, setImoveis] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 10 });
@@ -120,5 +120,13 @@ export default function ImoveisPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function ImoveisPage() {
+    return (
+        <Suspense fallback={<div>Carregando lista de imóveis...</div>}>
+            <AdminImoveisList />
+        </Suspense>
     );
 }
