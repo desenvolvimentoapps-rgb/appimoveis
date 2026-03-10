@@ -1,4 +1,5 @@
 'use client'
+// Build version: 109032029 (Sync check)完成心
 
 import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
