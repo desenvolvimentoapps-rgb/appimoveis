@@ -25,9 +25,9 @@ export default function PublicLayout({
         fetchSettings()
     }, [supabase])
 
-    const companyInfo = settings.find(s => s.key === 'company_info')?.value || {}
-    const appearance = settings.find(s => s.key === 'appearance')?.value || {}
-    const footerInfo = settings.find(s => s.key === 'footer_info')?.value || {
+    const companyInfo = (settings.find(s => s.key === 'company_info')?.value as Record<string, unknown>) || {}
+    const appearance = (settings.find(s => s.key === 'appearance')?.value as Record<string, unknown>) || {}
+    const footerInfo = (settings.find(s => s.key === 'footer_info')?.value as Record<string, unknown>) || {
         description: 'Especialistas em lançamentos e imóveis de alto padrão.',
         links_title: 'Links Rápidos',
         cities_title: 'Cidades',
@@ -43,9 +43,9 @@ export default function PublicLayout({
         ]
     }
 
-    const primaryColor = appearance.primary_color || '#1e293b'
-    const secondaryColor = appearance.secondary_color || '#475569'
-    const accentColor = appearance.accent_color || '#4f46e5'
+    const primaryColor = (appearance.primary_color as string) || '#1e293b'
+    const secondaryColor = (appearance.secondary_color as string) || '#475569'
+    const accentColor = (appearance.accent_color as string) || '#4f46e5'
 
     return (
         <div
@@ -63,14 +63,14 @@ export default function PublicLayout({
             <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
                 <div className="container flex h-16 items-center justify-between px-4 md:px-8 max-w-7xl mx-auto">
                     <Link href="/" className="flex items-center gap-2">
-                        {appearance.logo_url ? (
-                            <img src={appearance.logo_url} alt={companyInfo.name || 'Logo'} className="h-8 w-auto" />
+                        {(appearance.logo_url as string) ? (
+                            <img src={appearance.logo_url as string} alt={(companyInfo.name as string) || 'Logo'} className="h-8 w-auto" />
                         ) : (
                             <>
                                 <div className="bg-primary p-1.5 rounded-lg text-primary-foreground" style={{ backgroundColor: primaryColor }}>
                                     <Home className="w-5 h-5 text-white" />
                                 </div>
-                                <span className="text-xl font-bold tracking-tight">{companyInfo.name || 'Olivia Prado'}</span>
+                                <span className="text-xl font-bold tracking-tight">{(companyInfo.name as string) || 'Olivia Prado'}</span>
                             </>
                         )}
                     </Link>
@@ -96,17 +96,17 @@ export default function PublicLayout({
                 <div className="container px-4 md:px-8 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
                     <div className="space-y-4">
                         <div className="flex items-center gap-2">
-                            {appearance.logo_url ? (
-                                <img src={appearance.logo_url} alt="Logo" className="h-8 w-auto" />
+                            {(appearance.logo_url as string) ? (
+                                <img src={appearance.logo_url as string} alt="Logo" className="h-8 w-auto" />
                             ) : (
                                 <>
                                     <Home className="w-6 h-6 text-primary" style={{ color: primaryColor }} />
-                                    <span className="text-2xl font-bold">{companyInfo.name || 'Olivia Prado'}</span>
+                                    <span className="text-2xl font-bold">{(companyInfo.name as string) || 'Olivia Prado'}</span>
                                 </>
                             )}
                         </div>
                         <p className="text-sm text-muted-foreground leading-relaxed">
-                            {footerInfo.description || footerInfo.about_text || 'Especialistas em lançamentos e imóveis de alto padrão.'}
+                            {(footerInfo.description as string) || (footerInfo.about_text as string) || 'Especialistas em lançamentos e imóveis de alto padrão.'}
                         </p>
                     </div>
 
@@ -132,14 +132,14 @@ export default function PublicLayout({
                     <div>
                         <h4 className="font-bold mb-4">{footerInfo.contact_title || 'Contato'}</h4>
                         <ul className="space-y-3 text-sm text-muted-foreground">
-                            <li className="flex items-center gap-2 font-bold text-primary"><Phone className="w-4 h-4" /> {footerInfo.phone || companyInfo.whatsapp}</li>
-                            <li className="flex items-center gap-2"><Mail className="w-4 h-4" /> {footerInfo.email || companyInfo.email || 'contato@oliviaprado.com.br'}</li>
-                            <li className="pt-2 italic text-xs">{footerInfo.hours}</li>
+                            <li className="flex items-center gap-2 font-bold text-primary"><Phone className="w-4 h-4" /> {(footerInfo.phone as string) || (companyInfo.whatsapp as string)}</li>
+                            <li className="flex items-center gap-2"><Mail className="w-4 h-4" /> {(footerInfo.email as string) || (companyInfo.email as string) || 'contato@oliviaprado.com.br'}</li>
+                            <li className="pt-2 italic text-xs">{footerInfo.hours as string}</li>
                         </ul>
                     </div>
                 </div>
                 <div className="container px-4 md:px-8 max-w-7xl mx-auto mt-12 pt-8 border-t text-center text-xs text-muted-foreground">
-                    &copy; {new Date().getFullYear()} {companyInfo.name || 'Olivia Prado'} - Todos os direitos reservados.
+                    &copy; {new Date().getFullYear()} {(companyInfo.name as string) || 'Olivia Prado'} - Todos os direitos reservados.
                 </div>
             </footer>
         </div>
