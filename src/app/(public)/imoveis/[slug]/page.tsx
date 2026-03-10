@@ -318,17 +318,17 @@ export default function PropertyDetailsPage({ params: paramsPromise }: { params:
                                 <>
                                     <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-1 group hover:border-primary/30 transition-all">
                                         <Bed className="w-6 h-6 text-primary mb-1" style={{ color: 'var(--primary)' }} />
-                                        <span className="text-xl font-black text-slate-900">{property.specs?.quartos || 0}</span>
+                                        <span className="text-xl font-black text-slate-900">{(property.specs as Record<string, unknown>)?.quartos as number || 0}</span>
                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Dormitórios</span>
                                     </div>
                                     <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-1 group hover:border-primary/30 transition-all">
                                         <Bath className="w-6 h-6 text-primary mb-1" style={{ color: 'var(--primary)' }} />
-                                        <span className="text-xl font-black text-slate-900">{property.specs?.banheiros || 0}</span>
+                                        <span className="text-xl font-black text-slate-900">{(property.specs as Record<string, unknown>)?.banheiros as number || 0}</span>
                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Banheiros</span>
                                     </div>
                                     <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-1 group hover:border-primary/30 transition-all">
                                         <Maximize className="w-6 h-6 text-primary mb-1" style={{ color: 'var(--primary)' }} />
-                                        <span className="text-xl font-black text-slate-900">{property.specs?.area_total || 0}</span>
+                                        <span className="text-xl font-black text-slate-900">{(property.specs as Record<string, unknown>)?.area_total as number || 0}</span>
                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">m² Área Total</span>
                                     </div>
                                     <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-1 group hover:border-primary/30 transition-all">
