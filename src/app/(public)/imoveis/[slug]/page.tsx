@@ -416,7 +416,7 @@ export default function PropertyDetailsPage({ params: paramsPromise }: { params:
                                                             <span className="text-sm font-semibold text-slate-600">{field.label}</span>
                                                         </div>
                                                         <div className="text-sm font-black text-slate-900">
-                                                            {typeof val === 'boolean' ? (val ? 'Sim' : 'Não') : val}
+                                                            {typeof val === 'boolean' ? (val ? 'Sim' : 'Não') : (val as string | number)}
                                                         </div>
                                                     </li>
                                                 )
