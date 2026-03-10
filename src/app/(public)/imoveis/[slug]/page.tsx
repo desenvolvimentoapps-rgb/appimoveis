@@ -95,7 +95,7 @@ export default function PropertyDetailsPage({ params: paramsPromise }: { params:
 
     const companyInfo = useMemo(() => {
         const info = settings.find(s => s.key === 'company_info')?.value
-        return info || { whatsapp: '5541999999999' }
+        return (info as Record<string, unknown>) || { whatsapp: '5541999999999' }
     }, [settings])
 
     const handleSendLead = async (e: React.FormEvent) => {
@@ -118,8 +118,9 @@ export default function PropertyDetailsPage({ params: paramsPromise }: { params:
             setLeadName('')
             setLeadEmail('')
             setLeadPhone('')
-        } catch (error: any) {
-            toast.error('Erro ao enviar contato', { description: error.message })
+        } catch (error: unknown) {
+            const err = error as Error
+            toast.error('Erro ao enviar contato', { description: err.message })
         } finally {
             setIsSendingLead(false)
         }
@@ -131,15 +132,15 @@ export default function PropertyDetailsPage({ params: paramsPromise }: { params:
         // Track Click (Increment click_count)
         await supabase.rpc('increment_property_click', { property_id: property.id })
 
-        const whatsappConfig = settings.find(s => s.key === 'whatsapp_config')?.value || {}
+        const whatsappConfig = (settings.find(s => s.key === 'whatsapp_config')?.value as Record<string, unknown>) || {}
 
         let targetNumber = isInternational
-            ? (property.whatsapp_intl || whatsappConfig.default_intl || companyInfo.whatsapp || '5541999999999')
-            : (property.whatsapp_br || whatsappConfig.default_br || companyInfo.whatsapp || '5541999999999')
+            ? (property.whatsapp_intl || (whatsappConfig.default_intl as string) || (companyInfo.whatsapp as string) || '5541999999999')
+            : (property.whatsapp_br || (whatsappConfig.default_br as string) || (companyInfo.whatsapp as string) || '5541999999999')
 
         const template = isInternational
-            ? (whatsappConfig.message_template_intl || "Hello! I'm interested in the property: {property_title}. (Ref: {property_code}). Link: {property_url}")
-            : (whatsappConfig.message_template_br || whatsappConfig.message_template || "Olá! Gostaria de mais informações sobre o imóvel: {property_title}. (Código: {property_code}). Link: {property_url}")
+            ? (whatsappConfig.message_template_intl as string || "Hello! I'm interested in the property: {property_title}. (Ref: {property_code}). Link: {property_url}")
+            : (whatsappConfig.message_template_br as string || whatsappConfig.message_template as string || "Olá! Gostaria de mais informações sobre o imóvel: {property_title}. (Código: {property_code}). Link: {property_url}")
 
         const propertyUrl = typeof window !== 'undefined' ? window.location.href : ''
         const message = template

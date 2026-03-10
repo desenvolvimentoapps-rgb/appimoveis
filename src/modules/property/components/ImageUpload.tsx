@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { Plus, X, Image as ImageIcon, Loader2 } from 'lucide-react'
+import { Plus, X, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface ImageUploadProps {
@@ -31,7 +31,7 @@ export function ImageUpload({ images, onChange, onMainImageChange, mainImageInde
                 const fileName = `${Math.random()}.${fileExt}`
                 const filePath = `properties/${fileName}`
 
-                const { error: uploadError, data } = await supabase.storage
+                const { error: uploadError } = await supabase.storage
                     .from('property-images')
                     .upload(filePath, file)
 
@@ -46,8 +46,9 @@ export function ImageUpload({ images, onChange, onMainImageChange, mainImageInde
 
             onChange(newImages)
             toast.success('Imagens enviadas com sucesso!')
-        } catch (error: any) {
-            toast.error('Erro no upload', { description: error.message })
+        } catch (error: unknown) {
+            const err = error as Error
+            toast.error('Erro no upload', { description: err.message })
         } finally {
             setIsUploading(false)
             e.target.value = ''

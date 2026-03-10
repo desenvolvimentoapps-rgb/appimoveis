@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useCMSStore } from '@/hooks/useCMS'
 import { Property, PropertyType } from '@/types/database'
+import * as LucideIcons from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -14,8 +15,7 @@ import { DynamicFieldRenderer } from '@/modules/cms/components/DynamicFieldRende
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
 import { toast } from 'sonner'
-import { Save, MapPin, Info, Home, List, ShieldCheck, Image as ImageIcon, Loader2, Search, MessageSquare } from 'lucide-react'
-import * as LucideIcons from 'lucide-react'
+import { Save, MapPin, Info, ShieldCheck, Image as ImageIcon, Loader2, Search } from 'lucide-react'
 import axios from 'axios'
 
 import { ImageUpload } from './ImageUpload'
@@ -113,7 +113,7 @@ export function PropertyForm({ initialData, isEditing = false }: PropertyFormPro
         }
     }
 
-    const handleDynamicChange = (section: 'specs' | 'amenities' | 'features', name: string, value: any) => {
+    const handleDynamicChange = (section: 'specs' | 'amenities' | 'features', name: string, value: unknown) => {
         setFormData(prev => ({
             ...prev,
             [section]: {
@@ -148,8 +148,9 @@ export function PropertyForm({ initialData, isEditing = false }: PropertyFormPro
             }
             router.push('/admin/properties')
             router.refresh()
-        } catch (error: any) {
-            toast.error('Erro ao salvar', { description: error.message })
+        } catch (error: unknown) {
+            const err = error as Error
+            toast.error('Erro ao salvar', { description: err.message })
         } finally {
             setIsLoading(false)
         }

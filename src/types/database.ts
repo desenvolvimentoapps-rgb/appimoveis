@@ -58,9 +58,9 @@ export interface Property {
     images: string[]
     main_image_index: number
 
-    specs: Record<string, any>
-    amenities: Record<string, any>
-    features: Record<string, any>
+    specs: Record<string, unknown>
+    amenities: Record<string, unknown>
+    features: Record<string, unknown>
 
     is_featured: boolean
     is_active: boolean
@@ -98,7 +98,7 @@ export interface CMSField {
     is_active: boolean
     is_visible: boolean
     is_filterable: boolean
-    options: any
+    options: unknown
     property_type_id: string | null
     instruction: string | null
     placeholder: string | null
@@ -111,7 +111,7 @@ export interface CMSField {
 export interface CMSSettings {
     id: string
     key: string
-    value: any
+    value: unknown
     label: string | null
     description: string | null
     updated_at: string

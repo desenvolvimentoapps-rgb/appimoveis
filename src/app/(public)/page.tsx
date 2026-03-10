@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Property, PropertyType, CMSField, CMSSettings } from '@/types/database'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Search, MapPin, Bed, Bath, Maximize, ArrowRight, Loader2, SlidersHorizontal, ChevronRight, ChevronLeft } from 'lucide-react'
@@ -30,30 +30,40 @@ export default function HomePage() {
     // Filters
     const [search, setSearch] = useState('')
     const [selectedType, setSelectedType] = useState('all')
-    const [dynamicFilters, setDynamicFilters] = useState<Record<string, any>>({})
+    const [dynamicFilters, setDynamicFilters] = useState<Record<string, unknown>>({})
+
+    const fetchData = async () => {
+        setIsLoading(true)
+        try {
+            const [propRes, typeRes, fieldRes] = await Promise.all([
+                supabase.from('properties').select('*, type:property_types(name)').eq('is_active', true).order('is_featured', { ascending: false }).order('created_at', { ascending: false }),
+                supabase.from('property_types').select('*').eq('is_active', true).order('name'),
+                supabase.from('cms_fields').select('*').eq('is_filterable', true)
+            ])
+
+            if (propRes.data) setProperties(propRes.data as Property[])
+            if (typeRes.data) setTypes(typeRes.data as PropertyType[])
+            if (fieldRes.data) setFilterableFields(fieldRes.data as CMSField[])
+        } catch (error) {
+            console.error('Error fetching data:', error)
+        } finally {
+            setIsLoading(false)
+        }
+    }
 
     useEffect(() => {
         const fetchSettings = async () => {
             const { data } = await supabase.from('cms_settings').select('*')
-            if (data) setSettings(data)
+            if (data) setSettings(data as CMSSettings[])
         }
-        fetchData()
-        fetchSettings()
+
+        const timer = setTimeout(() => {
+            fetchData()
+            fetchSettings()
+        }, 0)
+
+        return () => clearTimeout(timer)
     }, [])
-
-    const fetchData = async () => {
-        setIsLoading(true)
-        const [propRes, typeRes, fieldRes] = await Promise.all([
-            supabase.from('properties').select('*, type:property_types(name)').eq('is_active', true).order('is_featured', { ascending: false }).order('created_at', { ascending: false }),
-            supabase.from('property_types').select('*').eq('is_active', true).order('name'),
-            supabase.from('cms_fields').select('*').eq('is_filterable', true)
-        ])
-
-        if (propRes.data) setProperties(propRes.data)
-        if (typeRes.data) setTypes(typeRes.data)
-        if (fieldRes.data) setFilterableFields(fieldRes.data)
-        setIsLoading(false)
-    }
 
     const filteredProperties = useMemo(() => {
         return properties.filter(p => {
@@ -72,7 +82,7 @@ export default function HomePage() {
                 if (!field) return true
 
                 const section = field.section === 'ficha_tecnica' ? 'specs' : field.section === 'comodidades' ? 'amenities' : 'features'
-                const propertyVal = p[section as keyof Property] as Record<string, any>
+                const propertyVal = p[section as keyof Property] as Record<string, unknown>
 
                 if (field.type === 'boolean') return !!propertyVal?.[key] === !!val
                 if (field.type === 'number') return Number(propertyVal?.[key]) >= Number(val)
@@ -89,7 +99,7 @@ export default function HomePage() {
     const totalPages = Math.ceil(filteredProperties.length / pageSize)
     const currentProperties = filteredProperties.slice((page - 1) * pageSize, page * pageSize)
 
-    const handleDynamicFilterChange = (key: string, val: any) => {
+    const handleDynamicFilterChange = (key: string, val: unknown) => {
         setDynamicFilters(prev => ({ ...prev, [key]: val }))
         setPage(1)
     }
@@ -101,9 +111,9 @@ export default function HomePage() {
         setPage(1)
     }
 
-    const companyInfo = settings.find(s => s.key === 'company_info')?.value || {}
-    const appearance = settings.find(s => s.key === 'appearance')?.value || {}
-    const heroBg = appearance.hero_bg_url || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1920&q=80'
+    const companyInfo = (settings.find(s => s.key === 'company_info')?.value as Record<string, unknown>) || {}
+    const appearance = (settings.find(s => s.key === 'appearance')?.value as Record<string, unknown>) || {}
+    const heroBg = (appearance.hero_bg_url as string) || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1920&q=80'
 
     return (
         <div className="flex flex-col gap-16 pb-20 bg-slate-50/30">
@@ -112,7 +122,7 @@ export default function HomePage() {
                 <div className="absolute inset-0 z-0">
                     <img
                         src={heroBg}
-                        alt={companyInfo.name || 'Hero Background'}
+                        alt={(companyInfo.name as string) || 'Hero Background'}
                         className="w-full h-full object-cover opacity-60 scale-105"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
@@ -154,14 +164,12 @@ export default function HomePage() {
                             </Select>
                         </div>
                         <Sheet>
-                            <SheetTrigger
-                                render={
-                                    <Button variant="outline" className="h-14 px-6 rounded-xl border-slate-200 hover:bg-slate-50 text-slate-700 font-bold gap-2">
-                                        <SlidersHorizontal className="w-4 h-4" />
-                                        Filtros
-                                    </Button>
-                                }
-                            />
+                            <SheetTrigger asChild>
+                                <Button variant="outline" className="h-14 px-6 rounded-xl border-slate-200 hover:bg-slate-50 text-slate-700 font-bold gap-2">
+                                    <SlidersHorizontal className="w-4 h-4" />
+                                    Filtros
+                                </Button>
+                            </SheetTrigger>
                             <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
                                 <SheetHeader className="border-b pb-6">
                                     <SheetTitle className="text-2xl font-bold">Filtros Avançados</SheetTitle>
@@ -190,7 +198,7 @@ export default function HomePage() {
                                                     <Input
                                                         type="number"
                                                         placeholder={`Mínimo de ${field.label.toLowerCase()}`}
-                                                        value={dynamicFilters[field.name] || ''}
+                                                        value={(dynamicFilters[field.name] as string) || ''}
                                                         onChange={e => handleDynamicFilterChange(field.name, e.target.value)}
                                                         className="h-12 rounded-xl"
                                                     />
@@ -198,7 +206,7 @@ export default function HomePage() {
                                             )}
 
                                             {field.type === 'select' && (
-                                                <Select value={dynamicFilters[field.name] || 'any'} onValueChange={v => handleDynamicFilterChange(field.name, (v ?? 'any') === 'any' ? undefined : v)}>
+                                                <Select value={(dynamicFilters[field.name] as string) || 'any'} onValueChange={v => handleDynamicFilterChange(field.name, (v ?? 'any') === 'any' ? undefined : v)}>
                                                     <SelectTrigger className="h-12 rounded-xl">
                                                         <SelectValue placeholder="Selecione..." />
                                                     </SelectTrigger>
@@ -266,7 +274,7 @@ export default function HomePage() {
                         </div>
                         <div className="space-y-2">
                             <p className="text-2xl font-bold text-slate-900">Nenhum resultado encontrado</p>
-                            <p className="text-slate-500 max-w-sm mx-auto leading-relaxed">Não encontramos imóveis com esses critérios. Tente limpar os filtros ou mudar sua busca.</p>
+                            <p className="text-slate-500 max-w-sm mx-auto leading-relaxed">Não encontramos imóveis com esses critérios. Tente limpar los filtros ou mudar sua busca.</p>
                         </div>
                         <Button variant="outline" onClick={resetFilters} className="rounded-xl px-8 h-12 border-slate-200">Limpar todos os filtros</Button>
                     </div>
@@ -304,17 +312,17 @@ export default function HomePage() {
                                                 <div className="flex items-center justify-between gap-2 p-1 bg-slate-50/50 rounded-2xl border border-slate-100">
                                                     <div className="flex flex-col items-center flex-1 py-1 px-2 border-r border-slate-200/50">
                                                         <Bed className="w-4 h-4 text-primary mb-1" />
-                                                        <span className="text-xs font-black text-slate-800">{p.specs?.quartos || 0}</span>
+                                                        <span className="text-xs font-black text-slate-800">{(p.specs as Record<string, unknown>)?.quartos as number || 0}</span>
                                                         <span className="text-[8px] uppercase tracking-wider text-slate-400 font-bold">Quartos</span>
                                                     </div>
                                                     <div className="flex flex-col items-center flex-1 py-1 px-2 border-r border-slate-200/50">
                                                         <Bath className="w-4 h-4 text-primary mb-1" />
-                                                        <span className="text-xs font-black text-slate-800">{p.specs?.banheiros || 0}</span>
+                                                        <span className="text-xs font-black text-slate-800">{(p.specs as Record<string, unknown>)?.banheiros as number || 0}</span>
                                                         <span className="text-[8px] uppercase tracking-wider text-slate-400 font-bold">Suítes</span>
                                                     </div>
                                                     <div className="flex flex-col items-center flex-1 py-1 px-2">
                                                         <Maximize className="w-4 h-4 text-primary mb-1" />
-                                                        <span className="text-xs font-black text-slate-800">{p.specs?.area_total || 0}</span>
+                                                        <span className="text-xs font-black text-slate-800">{(p.specs as Record<string, unknown>)?.area_total as number || 0}</span>
                                                         <span className="text-[8px] uppercase tracking-wider text-slate-400 font-bold">m² Área</span>
                                                     </div>
                                                 </div>
@@ -325,7 +333,7 @@ export default function HomePage() {
                                                 <div className="flex flex-col">
                                                     <span className="text-[10px] text-slate-400 uppercase font-black tracking-tighter">Valor de venda</span>
                                                     <span className="text-2xl font-black text-primary tracking-tighter leading-none">
-                                                        {p.value ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.value) : 'Consulte'}
+                                                        {p.value ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.value as number) : 'Consulte'}
                                                     </span>
                                                 </div>
                                                 <div className="h-12 w-12 rounded-full bg-slate-50 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all duration-300">
@@ -394,7 +402,7 @@ export default function HomePage() {
                         <h2 className="text-5xl font-black text-slate-900 leading-tight">Excelência em Atendimento Imobiliário</h2>
                         <div className="space-y-4 text-slate-600 text-lg leading-relaxed">
                             <p>
-                                {settings.find(s => s.key === 'footer_info')?.value?.about_text || 'Olivia Prado Especialistas em lançamentos e imóveis de alto padrão. Encontre o lar dos seus sonhos com quem entende do mercado.'}
+                                {(settings.find(s => s.key === 'footer_info')?.value as Record<string, unknown>)?.about_text as string || 'Olivia Prado Especialistas em lançamentos e imóveis de alto padrão. Encontre o lar dos seus sonhos com quem entende do mercado.'}
                             </p>
                             <p className="text-sm">
                                 Nossa missão é proporcionar um atendimento personalizado e exclusivo, garantindo que cada cliente encontre não apenas um imóvel, mas o seu próximo refúgio de luxo e sofisticação.
@@ -451,110 +459,7 @@ export default function HomePage() {
                                     </div>
                                     <div>
                                         <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Fale Conosco</p>
-                                        <p className="text-white font-medium">{settings.find(s => s.key === 'footer_info')?.value?.phone || '(41) 99999-9999'}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <Card className="bg-white/5 border-white/10 backdrop-blur-sm p-4 md:p-8 rounded-[2.5rem]">
-                            <form className="space-y-5">
-                                <div className="space-y-2">
-                                    <Label className="text-white/70 ml-1">Nome Completo</Label>
-                                    <Input className="h-14 bg-white/5 border-white/10 text-white rounded-2xl focus:bg-white focus:text-slate-900 transition-all" placeholder="Seu nome..." />
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div className="space-y-2">
-                                        <Label className="text-white/70 ml-1">E-mail</Label>
-                                        <Input className="h-14 bg-white/5 border-white/10 text-white rounded-2xl focus:bg-white focus:text-slate-900 transition-all" placeholder="seu@email.com" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-white/70 ml-1">WhatsApp</Label>
-                                        <Input className="h-14 bg-white/5 border-white/10 text-white rounded-2xl focus:bg-white focus:text-slate-900 transition-all" placeholder="(00) 00000-0000" />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-white/70 ml-1">Mensagem</Label>
-                                    <Textarea className="bg-white/5 border-white/10 text-white rounded-2xl focus:bg-white focus:text-slate-900 transition-all min-h-[120px]" placeholder="Como podemos ajudar?" />
-                                </div>
-                                <Button className="w-full h-16 bg-primary hover:bg-primary/90 text-white text-lg font-black rounded-2xl shadow-2xl shadow-primary/20 transition-all active:scale-[0.98] pt-1">
-                                    Enviar Solicitação
-                                </Button>
-                            </form>
-                        </Card>
-                    </div>
-                </div>
-            </section>
-
-            {/* About Us Section */}
-            <section id="sobre" className="container max-w-7xl mx-auto px-4 py-24 border-t">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                    <div className="space-y-8">
-                        <div className="flex items-center gap-2 mb-2">
-                            <div className="h-1 w-12 bg-primary rounded-full" />
-                            <span className="text-primary font-black text-xs uppercase tracking-[0.3em]">Nossa História</span>
-                        </div>
-                        <h2 className="text-5xl font-black text-slate-900 leading-tight">Excelência em Atendimento Imobiliário</h2>
-                        <div className="space-y-4 text-slate-600 text-lg leading-relaxed">
-                            <p>
-                                {settings.find(s => s.key === 'footer_info')?.value?.about_text || 'Olivia Prado Especialistas em lançamentos e imóveis de alto padrão. Encontre o lar dos seus sonhos com quem entende do mercado.'}
-                            </p>
-                            <p className="text-sm">
-                                Nossa missão é proporcionar um atendimento personalizado e exclusivo, garantindo que cada cliente encontre não apenas um imóvel, mas o seu próximo refúgio de luxo e sofisticação.
-                            </p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-8 pt-4">
-                            <div>
-                                <h4 className="text-3xl font-black text-primary">10+</h4>
-                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Anos de Mercado</p>
-                            </div>
-                            <div>
-                                <h4 className="text-3xl font-black text-primary">500+</h4>
-                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Sonhos Realizados</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="relative group">
-                        <div className="absolute -inset-4 bg-primary/10 rounded-[3rem] blur-2xl group-hover:bg-primary/20 transition-all duration-700" />
-                        <div className="relative aspect-[4/5] rounded-[2.5rem] overflow-hidden shadow-2xl">
-                            <img
-                                src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80"
-                                className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-1000"
-                                alt="Equipe Olivia Prado"
-                            />
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Contact Section */}
-            <section id="contato" className="bg-slate-900 py-24 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-1/3 h-full bg-primary/5 -skew-x-12 translate-x-1/2" />
-                <div className="container max-w-7xl mx-auto px-4 relative z-10">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-                        <div className="space-y-8">
-                            <div className="space-y-4">
-                                <h2 className="text-4xl md:text-5xl font-black text-white leading-tight">Vamos Encontrar seu <br /><span className="text-primary italic">Novo Lar?</span></h2>
-                                <p className="text-slate-400 text-lg">Deixe sua mensagem e um de nossos especialistas entrará em contato em breve.</p>
-                            </div>
-
-                            <div className="space-y-6 pt-4">
-                                <div className="flex items-center gap-4 group">
-                                    <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
-                                        <MapPin className="w-6 h-6" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Endereço Principal</p>
-                                        <p className="text-white font-medium">Curitiba - PR | Ponta Grossa - PR</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-4 group">
-                                    <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
-                                        <ArrowRight className="w-6 h-6" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Fale Conosco</p>
-                                        <p className="text-white font-medium">{settings.find(s => s.key === 'footer_info')?.value?.phone || '(41) 99999-9999'}</p>
+                                        <p className="text-white font-medium">{(settings.find(s => s.key === 'footer_info')?.value as Record<string, unknown>)?.phone as string || '(41) 99999-9999'}</p>
                                     </div>
                                 </div>
                             </div>

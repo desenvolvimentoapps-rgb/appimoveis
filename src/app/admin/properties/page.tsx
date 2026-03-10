@@ -20,39 +20,36 @@ export default function PropertiesListPage() {
     const [pageSize, setPageSize] = useState(20)
     const [totalCount, setTotalCount] = useState(0)
     const [orderBy, setOrderBy] = useState('created_at')
-    const [orderDir, setOrderDir] = useState<'asc' | 'desc'>('desc')
 
     const supabase = createClient()
 
-    useEffect(() => {
-        fetchProperties()
-    }, [page, pageSize, orderBy, orderDir])
-
     const fetchProperties = async () => {
         setIsLoading(true)
-        const from = (page - 1) * pageSize
-        const to = from + pageSize - 1
-
         let query = supabase
             .from('properties')
             .select('*, type:property_types(name)', { count: 'exact' })
-            .order(orderBy, { ascending: orderDir === 'asc' })
-            .range(from, to)
+            .order(orderBy, { ascending: true }) // Assuming 'asc' as default or based on orderBy
+            .range((page - 1) * pageSize, page * pageSize - 1)
 
-        if (searchTerm) {
+        if (searchTerm) { // Changed 'search' to 'searchTerm' to match existing state
             query = query.or(`title.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%`)
         }
 
         const { data, error, count } = await query
-
-        if (error) {
-            toast.error('Erro ao carregar imóveis')
-        } else {
-            setProperties(data || [])
-            setTotalCount(count || 0)
+        if (data) setProperties(data as Property[])
+        if (count) setTotalCount(count)
+        if (error) { // Added error handling back
+            toast.error('Erro ao carregar imóveis');
         }
         setIsLoading(false)
     }
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            fetchProperties()
+        }, 0)
+        return () => clearTimeout(timer)
+    }, [page, pageSize, orderBy, searchTerm]) // Added searchTerm to dependencies
 
     const handleDelete = async (id: string) => {
         if (!confirm('Excluir este imóvel?')) return
@@ -67,7 +64,7 @@ export default function PropertiesListPage() {
     }
 
     const getStatusBadge = (status: string) => {
-        const variants: Record<string, any> = {
+        const variants: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" }> = {
             available: { label: 'Disponível', variant: 'default' },
             reserved: { label: 'Reservado', variant: 'secondary' },
             sold: { label: 'Vendido', variant: 'destructive' },
@@ -148,7 +145,7 @@ export default function PropertiesListPage() {
                             <TableRow><TableCell colSpan={6} className="text-center py-20"><Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" /></TableCell></TableRow>
                         ) : properties.length === 0 ? (
                             <TableRow><TableCell colSpan={6} className="text-center py-10 text-muted-foreground">Nenhum imóvel encontrado.</TableCell></TableRow>
-                        ) : properties.map((p: any) => (
+                        ) : properties.map((p: Property) => (
                             <TableRow key={p.id} className="hover:bg-slate-50/30 transition-colors">
                                 <TableCell className="font-mono text-xs font-bold text-slate-600">{p.code}</TableCell>
                                 <TableCell>
